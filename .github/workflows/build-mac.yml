@@ -15,13 +15,15 @@ jobs:
       - name: Build universal bundle
         run: |
           P="${{ inputs.plugin }}"
-          chmod +x "src/source/plugins/$P/build_${P,,}_mac.sh"
-          "src/source/plugins/$P/build_${P,,}_mac.sh"
+          PL="$(echo "$P" | tr '[:upper:]' '[:lower:]')"
+          chmod +x "src/source/plugins/$P/build_${PL}_mac.sh"
+          "src/source/plugins/$P/build_${PL}_mac.sh"
       - name: Build installer pkg
         run: |
           P="${{ inputs.plugin }}"
-          chmod +x "src/source/plugins/$P/build_${P,,}_pkg_mac.sh"
-          "src/source/plugins/$P/build_${P,,}_pkg_mac.sh"
+          PL="$(echo "$P" | tr '[:upper:]' '[:lower:]')"
+          chmod +x "src/source/plugins/$P/build_${PL}_pkg_mac.sh"
+          "src/source/plugins/$P/build_${PL}_pkg_mac.sh"
       - name: Verify installer end to end
         run: |
           P="${{ inputs.plugin }}"
