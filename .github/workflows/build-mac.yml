@@ -1,0 +1,47 @@
+name: Build Adoki plugin macOS
+on:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: 'Plugin directory name in adoki-ffgl (e.g. AdokiMask)'
+        required: true
+        default: 'AdokiMask'
+jobs:
+  mac:
+    runs-on: macos-13
+    steps:
+      - name: Pull private source
+        run: git clone --depth 1 https://x-access-token:${{ secrets.PRIVATE_TOKEN }}@github.com/momokula123/adoki-ffgl.git src
+      - name: Build universal bundle
+        run: |
+          P="${{ inputs.plugin }}"
+          chmod +x "src/source/plugins/$P/build_${P,,}_mac.sh"
+          "src/source/plugins/$P/build_${P,,}_mac.sh"
+      - name: Build installer pkg
+        run: |
+          P="${{ inputs.plugin }}"
+          chmod +x "src/source/plugins/$P/build_${P,,}_pkg_mac.sh"
+          "src/source/plugins/$P/build_${P,,}_pkg_mac.sh"
+      - name: Verify installer end to end
+        run: |
+          P="${{ inputs.plugin }}"
+          sudo installer -pkg "src/source/plugins/$P/build/$P.pkg" -target /
+          DEST="$HOME/Documents/Resolume Arena/Extra Effects/$P.bundle"
+          if [ ! -d "$DEST" ]; then
+            echo "FAIL: bundle not installed"; find "$HOME/Documents" -maxdepth 4; exit 1
+          fi
+          echo "archs: $(lipo -archs "$DEST/Contents/MacOS/$P")"
+          echo "owner: $(stat -f '%Su' "$DEST")"
+          codesign -dv "$DEST" 2>&1 || true
+          echo "install verified"
+      - name: Package
+        run: |
+          P="${{ inputs.plugin }}"
+          cd "src/source/plugins/$P/build"
+          ditto -c -k --sequesterRsrc --keepParent "$P.bundle" "$P.bundle.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.plugin }}-macos
+          path: |
+            src/source/plugins/${{ inputs.plugin }}/build/*.bundle.zip
+            src/source/plugins/${{ inputs.plugin }}/build/*.pkg
